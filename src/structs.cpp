@@ -949,6 +949,8 @@ struct onplate change_coords(const struct target& O, const struct plate& P) {
     // the x-y position is given by our nhat's scaled by this
     obj.pos[0] = nhat2[0]/tht * rad;
     obj.pos[1] = nhat2[1]/tht * rad;
+    // switch to DESI C5 coordinates with opposite sign convention for y axis
+    obj.pos[1] = -obj.pos[1]
     return obj; 
 }
 

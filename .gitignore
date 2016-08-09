@@ -19,3 +19,5 @@ bin/fiberassign_surveysim
 bin/split_*
 slurm*
 *.pyc
+/test/*
+/script/*
