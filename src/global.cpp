@@ -849,7 +849,51 @@ void write_FAtile_ascii(int j, str outdir, const MTL& M, const Plates& P, const 
     }
     fclose(FA);
 }
+void write_QSZ5_ascii(int j, str outdir, const MTL& M, const Plates& P, const PP& pp, const Feat& F, const Assignment& A) {
+    FILE * FA;
+    int true_tile_no=P[j].tileid;
+    str s = outdir+"/QSZ5/tile"+i2s(true_tile_no)+".txt";
+    FA = fopen(s.c_str(),"w");
+    for (int k=0; k<F.Nfiber; k++) {
+        int g = A.TF[j][k];
+        // k
 
+        if (g!=-1) {
+            dpair Gal = projection(g,j,M,P);
+            fprintf(FA,"%ld %f %f %f %f\n",M[g].id,M[g].ra,M[g].dec,Gal.f,Gal.s);
+        }
+        else fprintf(FA,"-1\n");
+    }
+    fclose(FA);
+}
+
+void QSZ5(dpair Gal,double &Q, double& S, double& Z5, double& N) {
+  std::vector <double> S_coeff, Z5_coeff, N_coeff;
+  double Q,r,r_power,pi;
+  int n_poly=10;
+  
+  N=0;
+  S=0;
+  Z5=0;
+  r_power=1;
+  x=Gal.f;
+  y=Gal.s;
+  r=sqrt(x*x+y*y);
+  for (int i=0;i<n_poly;++i){
+    N+=N_coeff[i]*r_power;
+    S+=S_coeff[i]*r_power;
+    Z5+=Z5_coeff[i]*r_power;
+    r_power*=r;
+  }
+      
+  Q=atan2(y,x)
+  if(Q<0) Q+=M_PI;  
+  Q*=180./M_PI;
+}
+  
+      
+    
+    
 
 
 void fa_write (int j, str outdir, const MTL & M, const Plates & P, const PP & pp, const Feat & F, const Assignment & A) {
