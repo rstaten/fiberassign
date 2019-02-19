@@ -803,7 +803,7 @@ void redistribute_tf (MTL & M, Plates & P, const FP & pp, const Feat & F,
     printf("  %s redistributions of tile-fibers \n", f(red).c_str() );
     print_time(t, "# ... took :");
 }
-
+/*
 void fa_write (int j, str outdir, const MTL & M, const Plates & P,
                const FP & pp, const Feat & F, const Assignment & A) {
     // generate a quiet NaN to use for invalid entries.  We cannot
@@ -1122,4 +1122,6 @@ void fa_write (int j, str outdir, const MTL & M, const Plates & P,
     free ( tform );
     free ( tunit );
     return;
+
 }
+*/

@@ -180,6 +180,7 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
         }
 
         // ----- Target mask bits
+	/*
         if ( fits_get_colnum(fptr, CASEINSEN, (char *)"DESI_TARGET", &colnum,
                              &status) ) {
             fprintf(stderr, "error finding DESI_TARGET column\n");
@@ -210,7 +211,7 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
             fprintf(stderr, "error reading BGS_TARGET column\n");
             myexit(status);
         }
-
+	
         // OBSCONDITIONS
         if ( fits_get_colnum(fptr, CASEINSEN, (char *)"OBSCONDITIONS", &colnum,
                              &status) ) {
@@ -234,7 +235,7 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
             fprintf(stderr, "error reading BRICKNAME column\n");
             myexit(status);
         }
-
+	*/
         // ----- SUBPRIORITY
         if ( fits_get_colnum(fptr, CASEINSEN, (char *)"SUBPRIORITY", &colnum,
                              &status) ) {
@@ -277,10 +278,12 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
         }
         nkeep = 0;
         for (ii = 0; ii < nrows; ii++) {
+	  /*  rnc 2/15/19
             if ( ( (SS != 0) && ( (desi_target[ii] & starmask) != 0) ) ||
                  (SS == 0) ) {
+	  */
                 nkeep++;
-            }
+            //}
         }
         // count how many rows we will keep and reserve that amount
         // nkeep = nrows;
