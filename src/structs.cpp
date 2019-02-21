@@ -309,7 +309,7 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
             Q.nhat[0]    = cos(phi) * sin(theta);
             Q.nhat[1]    = sin(phi) * sin(theta);
             Q.nhat[2]    = cos(theta);
-            Q.obsconditions = obsconditions[ii];
+            //Q.obsconditions = obsconditions[ii];rnc 2/19/19
             // priority not present for sky fibers or standard stars
             Q.t_priority = priority[ii];
             Q.subpriority = subpriority[ii];
@@ -336,8 +336,11 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
             Q.lastpass = 0;
             Q.priority_class = 0;
             strncpy(Q.brickname, brickname[ii], 9);
+	    //rnc 2/20/19
+	    /*
             if ( ( (SS != -1) && ( (desi_target[ii] & starmask) != 0) ) ||
                  (SS == 0) ) {
+	    */
                 try {
                     M.push_back(Q);
                 } catch (std::exception & e) {
@@ -352,8 +355,8 @@ MTL read_MTLfile (str readfile, const Feat & F, long SS, long SF) {
                 if (!in) {
                     M.priority_list.push_back(Q.t_priority);
                 }
-            }
-        }  // end ii loop over targets
+		//}
+    }  // end ii loop over targets
 
         // Free memory
         free(targetid);
@@ -406,6 +409,7 @@ void assign_priority_class (MTL & M) {
 FP  read_fiber_positions (const Feat & F) {
     std::string buf;
     std::ifstream fs(F.fibFile.c_str() );
+    printf(" file %s \n",F.fibFile.c_str());
     if (!fs) {
         // An error occurred opening the file.
         std::cerr << "Unable to open file " << F.fibFile << std::endl;
@@ -429,6 +433,7 @@ FP  read_fiber_positions (const Feat & F) {
         double x, y;
         int fiber, location, spectro;
         std::istringstream(buf) >> fiber >> location >> spectro >> x >> y;
+	
         try {
             fiber_pos.fib_num = fiber;
             fiber_pos.location = location;

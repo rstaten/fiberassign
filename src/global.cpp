@@ -57,10 +57,12 @@ void collect_galaxies_for_all (const MTL & M,
                 // struct onplate op = change_coords(M[g],p);
                 struct onplate op = radec2xy(M[g], p);
                 op.id = g;
+		// rnc 2/19/19
                 // Check that the target corresponds to the right program
-                if (M[g].obsconditions & p.obsconditions) {
-                    O.push_back(op);
-                }
+		// skip because obsconditions not in files
+                //if (M[g].obsconditions & p.obsconditions) {
+                O.push_back(op);
+		    //}	
             }
             // Build 2D KD tree of those galaxies
             KDtree <struct onplate> kdT(O, 2);
@@ -76,6 +78,8 @@ void collect_galaxies_for_all (const MTL & M,
                     dpair Xg = projection(gals[g], j, M, P);
                     if (sq(Xg, X) < sq(F.PatrolRad) ) {
                         P[j].av_gals[k].push_back(gals[g]);
+		
+			}
                         int q = pp[k].spectrom;
                         // better to make SS & SF assigned to fibers
                         if (M[gals[g]].SS) {
@@ -90,7 +94,7 @@ void collect_galaxies_for_all (const MTL & M,
                 }
             }
         }
-    }
+
     print_time(t, "# ... took :");
 }
 
@@ -133,8 +137,10 @@ void collect_available_tilefibers (MTL & M, const Plates & P, const Feat & F) {
                 // k
                 int i = P[j].av_gals[k][m];
                 // list of tile-fibers available to galaxy i
+	
                 M[i].av_tfs.push_back(pair(j, k) );
             }
+	  
         }
     }
     print_time(t, "# ... took :");
@@ -144,6 +150,7 @@ void collect_available_tilefibers (MTL & M, const Plates & P, const Feat & F) {
             ++count_outside;
         }
     }
+
     printf("galaxies outside footprint %d\n", count_outside);
 }
 
@@ -154,9 +161,12 @@ inline bool ok_assign_g_to_jk (int g, int j, int k, const Plates & P,
                                const MTL & M, const FP & pp, const Feat & F,
                                const Assignment & A) {
     // if fiber is stuck or broken do not assign anything
+
+  
     if (pp[k].stuck || pp[k].broken) {
         return false;
     }
+  
     if (F.Collision) {
         for (size_t i = 0; i < pp[k].N.size(); i++) {
             if (g == A.TF[j][pp[k].N[i]]) {
@@ -221,11 +231,17 @@ inline int find_best (int j, int k, const MTL & M, const Plates & P,
                     // the InterPlate around, check with ok_to_assign
                     int isa = A.is_assigned_jg(j, g, M, F);
                     int ok = ok_assign_g_to_jk(g, j, k, P, M, pp, F, A);
+		    //if(j==11816){		    
+		    //printf("j  %d   k  %d\n",j,k);
+		    //}
                     if ( (isa == -1) && ok) {
                         best = g;
                         pbest = prio;
                         mbest = m;
                         subpbest = subprio;
+			//diagnostic
+			//if(j=11816){
+			//printf("g  %d  pbest  %d  subpbest  %7.5f k   %d \n",g,pbest,subpbest,k);}
                     }
                 }
             }
@@ -244,6 +260,8 @@ inline int assign_fiber (int j, int k, MTL & M, Plates & P, const FP & pp,
     int best = find_best(j, k, M, P, pp, F, A);
     if (best != -1) {
         A.assign(j, k, best, M, P, pp);
+	//if(j==11816){printf(" j %d best k % d %d\n",j,best,k);
+	//}
     }
     return best;
 }
@@ -386,6 +404,7 @@ void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
         std::vector <std::pair <double, int> > pairs;
         for (int k = 0; k < F.Nfiber; k++) {
             List av_gals = P[j].av_gals[k];
+
             double Max_fiber_priority = 0.;
             // loop over the potential list to find pbest and subpbest
             // and then combine them to give the fiber_weight
@@ -406,6 +425,7 @@ void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
                 }
             }
             std::pair <double, int> this_pair(Max_fiber_priority, k);
+	    
             pairs.push_back(this_pair);
         }
         std::sort(pairs.begin(), pairs.end(), inverse_pairCompare);
@@ -417,7 +437,9 @@ void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
         for (int k = 0; k < F.Nfiber; k++) {
             // Fiber
             best = assign_fiber(j, fiber_loop_order[k], M, P, pp, F, A);
-            if ( ( best != -1) || ( best != -2) ) {
+	    //diagnostic
+
+            if ( ( best != -1) && ( best != -2) ) {
                 countme++;
             }
         }

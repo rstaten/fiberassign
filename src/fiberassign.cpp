@@ -43,7 +43,7 @@ int main (int argc, char ** argv) {
     // Try to read SS and SF before targets to avoid wasting time if these
     // smaller files can't be read.
     init_time_at(time, "# Read target, SS, SF files", t);
-    MTL SStars = read_MTLfile(F.SStarsfile, F, 1, 0);
+    MTL SStars = read_MTLfile(F.SStarsfile, F, F.StarMask, 0);
     MTL SkyF   = read_MTLfile(F.SkyFfile,   F, 0, 1);
     MTL Targ   = read_MTLfile(F.Targfile,   F, 0, 0);
     print_time(time, "# ...read targets  took :");
@@ -169,10 +169,10 @@ int main (int argc, char ** argv) {
     // probably should not hard wire the limits i<1, i<3 in redistribute and
     // improve
     // more iterations will improve performance slightly
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 0; i++) {
         redistribute_tf(M, P, pp, F, A, 0);
     }
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 0; i++) {
         improve(M, P, pp, F, A, 0);
         redistribute_tf(M, P, pp, F, A, 0);
     }
@@ -216,6 +216,12 @@ int main (int argc, char ** argv) {
                 }
             }
         }
+	//diagnostic
+	printf("j %4d  Subtotals SS   %4d    SF   %4d", j,used_SS, used_SF);
+	for (size_t pr = 0; pr < M.priority_list.size(); ++pr) {
+	    printf(" class %2lu   %5d", pr, used_by_class[pr]);	
+	}
+	printf("\n");
     }
 
     init_time_at(time, "# count SS and SF ", t);
@@ -234,4 +240,5 @@ int main (int argc, char ** argv) {
     */
     print_time(t, "# Finished !... in");
     return (0);
+    
 }
