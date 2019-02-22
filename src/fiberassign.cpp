@@ -169,10 +169,10 @@ int main (int argc, char ** argv) {
     // probably should not hard wire the limits i<1, i<3 in redistribute and
     // improve
     // more iterations will improve performance slightly
-    for (int i = 0; i < 0; i++) {
+    for (int i = 0; i < 1; i++) {
         redistribute_tf(M, P, pp, F, A, 0);
     }
-    for (int i = 0; i < 0; i++) {
+    for (int i = 0; i < 1; i++) {
         improve(M, P, pp, F, A, 0);
         redistribute_tf(M, P, pp, F, A, 0);
     }
@@ -217,11 +217,13 @@ int main (int argc, char ** argv) {
             }
         }
 	//diagnostic
+	/*
 	printf("j %4d  Subtotals SS   %4d    SF   %4d", j,used_SS, used_SF);
 	for (size_t pr = 0; pr < M.priority_list.size(); ++pr) {
 	    printf(" class %2lu   %5d", pr, used_by_class[pr]);	
 	}
 	printf("\n");
+	*/
     }
 
     init_time_at(time, "# count SS and SF ", t);
