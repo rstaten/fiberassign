@@ -31,7 +31,8 @@ void Usage (char * ExecName) {
     std::cout << " --outdir <outputdirectory> ";
     std::cout << " --starmask <starbit_mask]";
     std::cout << " --nstarpetal <number of standard stars per petal>";
-    std::cout << " --nskypetal <numer of sky fibers per petal>";
+    std::cout << " --nskypetal <number of sky fibers per petal>";
+    std::cout << " --numEpochs <number of epochs>";
     std::cout << " [--rundate <YYYY-MM-DD>]" << std::endl;
     std::cout << std::endl;
     std::cout << " Or to print version to STDOUT: ";
@@ -77,6 +78,7 @@ void Feat::readInputFile (const char file[]) {
             if (tok[0] == "SStarsfile") SStarsfile = tok[1];
             if (tok[0] == "SkyFfile") SkyFfile = tok[1];
             if (tok[0] == "runDate") runDate = tok[1];
+	    if (tok[0] == "numEpochs") num_epoch = std::stoi(tok[1]);
         }
     }
     fIn.close();

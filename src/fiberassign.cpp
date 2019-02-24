@@ -33,9 +33,20 @@ int main (int argc, char ** argv) {
     init_time(t);
     Feat F;
     MTL M;
+ 
+    Plates P;
+    
 
+   
+   
+    // epoch allows multiple passes
+    int nepoch=1;
+    int epoch=0;
+    //if(epoch==0);{
+      //LOOP on epoch  
     // Read parameters file //
     // F.readInputFile(argv[1]);
+    
     F.parseCommandLine(argc, argv);
     // printFile(argv[1]);
 
@@ -103,10 +114,11 @@ int main (int argc, char ** argv) {
     // fibers per petal = 500
     F.Nfbp = F.Nfiber / F.Npetal;
     print_time(time, "# ..posiioners  took :");
+   
     init_time_at(time, "# Start plates", t);
 
     // P is original list of plates
-    Plates P = read_plate_centers(F);
+    P = read_plate_centers(F);
     F.Nplate = P.size();
     printf("# Read %s plate centers from %s and %d fibers from %s\n",
            f(F.Nplate).c_str(), F.tileFile.c_str(), F.Nfiber,
@@ -139,7 +151,8 @@ int main (int argc, char ** argv) {
     //// Assignment |||||||||||||||||||||||||||||||||||||||||||||||||||
     printf(" Nplate %d  Ngal %d   Nfiber %d \n", F.Nplate, F.Ngal, F.Nfiber);
     Assignment A(M, F);
-
+    //loop over epochs
+    for(epoch=0;epoch<nepoch;epoch++){
     // Make a plan ----------------------------------------------------
     print_time(t, "# Start assignment at : ");
     simple_assign(M, P, pp, F, A);
@@ -191,7 +204,7 @@ int main (int argc, char ** argv) {
         int j = A.suborder[jused];
         fill_unused_with_sf(j, M, P, pp, F, A);
     }
-
+    }//end of epoch loop
     // Results -------------------------------------------------------*/
     std::vector <int> total_used_by_class(M.priority_list.size(), 0);
     int total_used_SS = 0;

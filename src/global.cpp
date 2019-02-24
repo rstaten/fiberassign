@@ -395,11 +395,28 @@ bool inverse_pairCompare (const std::pair <double, int> & firstElem,
     return firstElem.first > secondElem.first;
 }
 
+void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A){
+    Time t;
+    init_time(t, "#Begin clean_up :");
+    int g;
+    for (int j = 0; j < F.Nplate; j++) {
+        for (int k = 0; k < F.Nfiber; k++) {
+	  g=A.TF[j][k];
+	  M[g].nobs_remain--;
+	  M[g].nobs_done++;
+	  A.TF[j][k]=-1;
+	}
+    }
+    return;
+}
+
+
 void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
                     Assignment & A) {
     Time t;
     init_time(t, "# Begin simple assignment :");
     int countme = 0;
+    
     for (int j = 0; j < F.Nplate; j++) {
         std::vector <std::pair <double, int> > pairs;
         for (int k = 0; k < F.Nfiber; k++) {

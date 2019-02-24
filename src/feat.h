@@ -30,6 +30,7 @@ class Feat {
         str surveyFile;
         str fibstatusFile;
         str runDate;
+	int num_epoch;
         // bit in desi_target that signals a standard star
         long StarMask;
         int InterPlate;
@@ -49,6 +50,7 @@ class Feat {
         bool Ascii;
         bool BrightTime;
         int Categories;
+	
         // Set after reading other input files
         int Nplate;
         int NUsedplate;
@@ -58,6 +60,7 @@ class Feat {
         int Ntarg;
         int Nfiber;
         int Npetal;
+	
         // Number of fibers by petals
         int Nfbp;
         // Memorizes geometry of central body and fiber holder
