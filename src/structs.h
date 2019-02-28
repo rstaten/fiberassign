@@ -142,7 +142,7 @@ class plate {
 
 class Plates : public std::vector <struct plate> {};
 
-Plates read_plate_centers (const Feat & F);
+Plates read_plate_centers (Feat & F);
 
 // Assignment ---------------------------------------------
 

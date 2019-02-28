@@ -37,7 +37,7 @@ void collect_available_tilefibers (MTL & M, const Plates & P, const Feat & F);
 // First simple assignment plan, executing find_best on every plate on every
 // fiber
 void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
-                    Assignment & A);
+                    Assignment & A,int epoch);
 
 // More fine first assignment plan,
 void improve (MTL & M, Plates & P, const FP & pp, const Feat & F,
@@ -84,5 +84,5 @@ void overlappingTiles (str fname, const Feat & F, const Assignment & A);
 
 bool myorder (int i, int j);
 
-
+void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A,int epoch);
 #endif

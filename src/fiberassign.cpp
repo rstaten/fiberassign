@@ -33,18 +33,15 @@ int main (int argc, char ** argv) {
     init_time(t);
     Feat F;
     MTL M;
- 
     Plates P;
-    
+    //for tabulation of results
+    int total_used_SS = 0;
+    int total_used_SF = 0;   
+    int ELG_obs=0;
+    std::vector <int> LRG_obs(2,0);
+    int QSOt_obs=0;
+    std::vector <int> QSOLya_obs(5,0);    
 
-   
-   
-    // epoch allows multiple passes
-    int nepoch=1;
-    int epoch=0;
-    //if(epoch==0);{
-      //LOOP on epoch  
-    // Read parameters file //
     // F.readInputFile(argv[1]);
     
     F.parseCommandLine(argc, argv);
@@ -88,6 +85,7 @@ int main (int argc, char ** argv) {
     init_time_at(time, "# assign priority classes", t);
     F.Ngal = M.size();
     assign_priority_class(M);
+    std::vector <int> total_used_by_class(M.priority_list.size(), 0);
     std::vector <int> count_class(M.priority_list.size(), 0);
     for (size_t i = 0; i < M.size(); ++i) {
         if (!M[i].SS && !M[i].SF) {
@@ -152,16 +150,18 @@ int main (int argc, char ** argv) {
     printf(" Nplate %d  Ngal %d   Nfiber %d \n", F.Nplate, F.Ngal, F.Nfiber);
     Assignment A(M, F);
     //loop over epochs
-    for(epoch=0;epoch<nepoch;epoch++){
+    for(int epoch=0;epoch<F.num_epoch;epoch++){
     // Make a plan ----------------------------------------------------
     print_time(t, "# Start assignment at : ");
-    simple_assign(M, P, pp, F, A);
+    simple_assign(M, P, pp, F, A, epoch);
 
     // check to see if there are tiles with no galaxies
     // need to keep mapping of old tile list to new tile list and inverse map
     A.inv_order = initList(F.Nplate, -1);
+    //need to clear out A.suborder
+    A.suborder.clear();
     int inv_count = 0;
-    for (int j = 0; j < F.Nplate; ++j) {
+    for (int j = F.epoch_list[epoch]; j < F.Nplate; ++j) {
         bool not_done = true;
         for (int k = 0; k < F.Nfiber && not_done; ++k) {
             if (A.TF[j][k] != -1) {
@@ -170,7 +170,7 @@ int main (int argc, char ** argv) {
                 not_done = false;
                 // inv_order[j] is -1 unless used
                 A.inv_order[j] = inv_count;
-                inv_count++;
+                inv_count++;	
             }
         }
     }
@@ -190,30 +190,33 @@ int main (int argc, char ** argv) {
         redistribute_tf(M, P, pp, F, A, 0);
     }
     init_time_at(time, "# assign SS and SF ", t);
-
-    // try assigning SF and SS before real time assignment
-    for (int jused = 0; jused < F.NUsedplate; ++jused) {
+   
+        // try assigning SF and SS before real time assignment
+    for (int jused =0 ; jused < F.NUsedplate; ++jused) {
+      
         int j = A.suborder[jused];
+
         // Assign SS and SF for each tile
         assign_sf_ss(j, M, P, pp, F, A);
         assign_unused(j, M, P, pp, F, A);
     }
-
-    // fill all unused fibers with sky fibers
+    
+       // fill all unused fibers with sky fibers
     for (int jused = 0; jused < F.NUsedplate; ++jused) {
         int j = A.suborder[jused];
         fill_unused_with_sf(j, M, P, pp, F, A);
     }
-    }//end of epoch loop
+     
+
     // Results -------------------------------------------------------*/
-    std::vector <int> total_used_by_class(M.priority_list.size(), 0);
-    int total_used_SS = 0;
-    int total_used_SF = 0;
+    clean_up(M, P, pp, F,A,epoch);
+
+    
     for (int jused = 0; jused < F.NUsedplate; ++jused) {
-        std::vector <int> used_by_class(M.priority_list.size(), 0);
-        int used_SS = 0;
-        int used_SF = 0;
-        int j = A.suborder[jused];
+    std::vector <int> used_by_class(M.priority_list.size(), 0);
+    int used_SS = 0;
+    int used_SF = 0;           
+    int j = A.suborder[jused];
         for (int k = 0; k < F.Nfiber; ++k) {
             int g = A.TF[j][k];
             if (g != -1) {
@@ -223,28 +226,59 @@ int main (int argc, char ** argv) {
                 } else if (M[g].SF) {
                     used_SF++;
                     total_used_SF++;
-                } else {
+                } 
+		  else {
                     used_by_class[M[g].priority_class]++;
                     total_used_by_class[M[g].priority_class]++;
-                }
-            }
-        }
-	//diagnostic
-	/*
-	printf("j %4d  Subtotals SS   %4d    SF   %4d", j,used_SS, used_SF);
-	for (size_t pr = 0; pr < M.priority_list.size(); ++pr) {
-	    printf(" class %2lu   %5d", pr, used_by_class[pr]);	
+		  }
+	    }
 	}
-	printf("\n");
-	*/
     }
 
+
+	
+    
+   
+    
     init_time_at(time, "# count SS and SF ", t);
     printf(" Totals SS   %4d    SF   %4d", total_used_SS, total_used_SF);
     for (size_t pr = 0; pr < M.priority_list.size(); ++pr) {
-        printf(" class %2lu   %5d", pr, total_used_by_class[pr]);
+        printf(" class %2lu   %5d \n", pr, total_used_by_class[pr]);
     }
-    printf("\n");
+
+    
+    printf("\n done with epoch %d\n",epoch);
+    }//end of epoch loop
+
+
+    for (int j = 0; j < F.Nplate; ++j) {
+    
+        for (int k = 0; k < F.Nfiber; ++k) {
+            int g = A.TF[j][k];
+            if (g != -1) {
+		    if(M[g].t_priority==3000){
+		      ELG_obs++;
+		    }
+		    else if(M[g].t_priority==3200){
+			LRG_obs[M[g].nobs_done-1]++;
+		    }
+		   		    
+		    else if(M[g].t_priority==3400){
+			QSOt_obs++;
+		    }
+
+		    else if(M[g].t_priority==3500){
+		      QSOLya_obs[M[g].nobs_done-1]++;
+		    }
+	    }
+	}
+    }
+    
+    printf("**ELGs  %d   \n",ELG_obs);
+    printf("**LRGs  (1)  %d    (2)   %d \n",LRG_obs[0],LRG_obs[1]/2);
+    printf("**QSO-t %d   \n",QSOt_obs);
+    printf("**QSO-Lya  (1)  %d  (2)  %d  (3) %d  (4)  %d  (5)  %d\n",QSOLya_obs[0],QSOLya_obs[1]/2,QSOLya_obs[2]/3,QSOLya_obs[3]/4,QSOLya_obs[4]/5);	    
+   
 
     init_time_at(time, "# print fits files ", t);
     /*

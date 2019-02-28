@@ -32,7 +32,7 @@ void Usage (char * ExecName) {
     std::cout << " --starmask <starbit_mask]";
     std::cout << " --nstarpetal <number of standard stars per petal>";
     std::cout << " --nskypetal <number of sky fibers per petal>";
-    std::cout << " --numEpochs <number of epochs>";
+    //std::cout << " --numEpochs <number of epochs>";
     std::cout << " [--rundate <YYYY-MM-DD>]" << std::endl;
     std::cout << std::endl;
     std::cout << " Or to print version to STDOUT: ";
@@ -56,6 +56,7 @@ Feat::Feat () {
     Collision = false;
     Exact = true;
     StarMask = 60129542144;
+    //epoch_list={0,2000,4000,6000,8000};
 }
 
 void Feat::readInputFile (const char file[]) {
@@ -78,7 +79,8 @@ void Feat::readInputFile (const char file[]) {
             if (tok[0] == "SStarsfile") SStarsfile = tok[1];
             if (tok[0] == "SkyFfile") SkyFfile = tok[1];
             if (tok[0] == "runDate") runDate = tok[1];
-	    if (tok[0] == "numEpochs") num_epoch = std::stoi(tok[1]);
+	    //if (tok[0] == "numEpochs") num_epoch = std::stoi(tok[1]);
+	    if (tok[0] == "epochStarts") epochFile=tok[1];
         }
     }
     fIn.close();
@@ -103,6 +105,10 @@ void Feat::parseCommandLine (int argc, char * * argv) {
             i++;
             surveyFile = str(argv[i]);
             i++;
+	} else if (!strcmp(argv[i], "--epochstarts") ) {
+	    i++;
+	    epochFile = str(argv[i]);
+	    i++;
         } else if (!strcmp(argv[i], "--outdir") ) {
             i++;
             outDir = str(argv[i]);
@@ -134,6 +140,10 @@ void Feat::parseCommandLine (int argc, char * * argv) {
         } else if (!strcmp(argv[i], "--nskypetal") ) {
             i++;
             MaxSF = atoi(argv[i]);
+            i++;
+        } else if (!strcmp(argv[i], "--numEpochs") ) {
+            i++;
+            num_epoch = atoi(argv[i]);
             i++;
         } else if (!strcmp(argv[i], "--help") ) {
             Usage(argv[0]);

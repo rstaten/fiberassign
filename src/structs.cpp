@@ -623,7 +623,7 @@ List plate::av_gals_plate (const Feat & F, const MTL & M,
     return L;
 }
 
-Plates read_plate_centers (const Feat & F) {
+Plates read_plate_centers (Feat & F) {
     Plates P, PQ;
     const char * fname;
     /*Variables used to read fits file*/
@@ -668,6 +668,25 @@ Plates read_plate_centers (const Feat & F) {
         survey_list.push_back(survey_tile);
     }
     printf(" number of tiles %lu \n", survey_list.size() );
+    // 2/27/19 read list of epoch beginnings
+    // use F.num_epoch
+    //
+    std::ifstream fepoch(F.epochFile.c_str());
+    if (!fepoch){      // An error occurred opening the epoch file.
+        std::cerr << "Unable to open file " << F.epochFile << std::endl;
+        myexit(1);
+    }
+    int epoch_start;
+    //std::vector <int> epoch_list;
+    std::string buff;
+    while (getline(fepoch, buff) ) {
+        std::istringstream ss(buff);
+        if (!(ss >> epoch_start) ) break;
+        F.epoch_list.push_back(epoch_start);
+	printf(" epoch %d \n",epoch_start);
+    }
+    F.num_epoch=F.epoch_list.size();
+
     // NEW
     // read list of tile centers
     // Check that input file exists and is readable by cfitsio
@@ -1050,8 +1069,9 @@ Plist Assignment::chosen_tfs (int g, const Feat & F, int begin) const {
         pair tf = GL[g][i];
         if (begin <= tf.f ) {
             if (TF[tf.f][tf.s] != g) {
-                printf("ERROR in chosen_tfs\n");
+	      printf("ERROR in chosen_tfs  g %d other g %d  tf.f  %d  tf.s %d  begin  %d\n",g,TF[tf.f][tf.s],tf.f,tf.s,begin);
                 fl();
+	       
             }
             chosen.push_back(tf);
         }

@@ -231,17 +231,13 @@ inline int find_best (int j, int k, const MTL & M, const Plates & P,
                     // the InterPlate around, check with ok_to_assign
                     int isa = A.is_assigned_jg(j, g, M, F);
                     int ok = ok_assign_g_to_jk(g, j, k, P, M, pp, F, A);
-		    //if(j==11816){		    
-		    //printf("j  %d   k  %d\n",j,k);
-		    //}
+		   
                     if ( (isa == -1) && ok) {
                         best = g;
                         pbest = prio;
                         mbest = m;
                         subpbest = subprio;
-			//diagnostic
-			//if(j=11816){
-			//printf("g  %d  pbest  %d  subpbest  %7.5f k   %d \n",g,pbest,subpbest,k);}
+		
                     }
                 }
             }
@@ -260,8 +256,7 @@ inline int assign_fiber (int j, int k, MTL & M, Plates & P, const FP & pp,
     int best = find_best(j, k, M, P, pp, F, A);
     if (best != -1) {
         A.assign(j, k, best, M, P, pp);
-	//if(j==11816){printf(" j %d best k % d %d\n",j,best,k);
-	//}
+
     }
     return best;
 }
@@ -395,29 +390,56 @@ bool inverse_pairCompare (const std::pair <double, int> & firstElem,
     return firstElem.first > secondElem.first;
 }
 
-void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A){
+void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A,int epoch){
+    //we want to keep all the assignments in this epoch
+    //update status of targets in this epoch
+    //but ignore subsequent epochs
+    //first tile in this epoch is epoch_list[epoch]
+    //last tile is epoch_list[epoch+1]-1
+    //so we might want to make the last element in epoch_list
+    //be the number of elements in the survey list, plus 1  
     Time t;
     init_time(t, "#Begin clean_up :");
     int g;
-    for (int j = 0; j < F.Nplate; j++) {
-        for (int k = 0; k < F.Nfiber; k++) {
-	  g=A.TF[j][k];
-	  M[g].nobs_remain--;
-	  M[g].nobs_done++;
-	  A.TF[j][k]=-1;
-	}
+    int last_tile;
+    printf("num_epoch %d \n",F.num_epoch);
+    for (int i=0;i<F.num_epoch;i++){
+      printf(" i  %d   epoch end %d \n", i,F.epoch_list[i]);
     }
+
+
+    if(epoch<F.num_epoch-1){
+      for(int j = F.epoch_list[epoch+1]; j < F.Nplate; j++) {
+        for (int k = 0; k < F.Nfiber; k++) {
+	  int g=A.TF[j][k];
+          if(g!=-1){
+	    A.unassign(j,k,g,M,P,pp);	      
+	  }
+	}
+      }
+      for(int j =F.epoch_list[epoch]; j<F.epoch_list[epoch+1]-1; j++){
+	for (int k = 0; k < F.Nfiber; k++) {
+	  int g=A.TF[j][k];
+	  if(g!=-1){
+	    if((M[g].t_priority==3400)&&(M[g].nobs_remain>0)){
+	      M[g].t_priority=3500;}
+	  }
+	}
+      }
+    }
+    
     return;
 }
 
 
 void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
-                    Assignment & A) {
+                    Assignment & A,int epoch) {
     Time t;
     init_time(t, "# Begin simple assignment :");
     int countme = 0;
-    
-    for (int j = 0; j < F.Nplate; j++) {
+    int jstart=F.epoch_list[epoch];
+    printf(" epoch %d  jstart  %d\n",epoch,jstart);
+    for (int j = jstart; j < F.Nplate; j++) {
         std::vector <std::pair <double, int> > pairs;
         for (int k = 0; k < F.Nfiber; k++) {
             List av_gals = P[j].av_gals[k];

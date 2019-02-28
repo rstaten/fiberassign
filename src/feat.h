@@ -30,6 +30,7 @@ class Feat {
         str surveyFile;
         str fibstatusFile;
         str runDate;
+	str epochFile;
 	int num_epoch;
         // bit in desi_target that signals a standard star
         long StarMask;
@@ -71,6 +72,8 @@ class Feat {
         // Practical used lists
         List no_ss_sf;
         List ss_sf;
+	// for epochs:beginning of each epoch: num_epoch entries
+	std::vector <int> epoch_list;
         // Methods
         Feat ();
         void readInputFile (const char fname[]);
