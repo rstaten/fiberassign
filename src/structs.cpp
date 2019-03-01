@@ -982,6 +982,10 @@ void Assignment::assign (int j, int k, int g, MTL & M, Plates & P,
     GL[g].push_back(p);
     M[g].nobs_done++;
     M[g].nobs_remain--;
+    if((M[g].t_priority==3400)&&(M[g].nobs_remain>0)){
+      M[g].t_priority=3500;
+    }
+    //hack for efficiency study rnc 3/1/19
     if (M[g].SF) {
         int q = pp[k].spectrom;
         P[j].SF_in_petal[q] += 1;

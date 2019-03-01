@@ -417,7 +417,10 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
 	  }
 	}
       }
-      for(int j =F.epoch_list[epoch]; j<F.epoch_list[epoch+1]-1; j++){
+    }
+    int lastone=F.Nplate;
+    if(epoch<F.num_epoch-1){lastone=F.epoch_list[epoch+1]-1;}
+      for(int j =F.epoch_list[epoch]; j<lastone; j++){
 	for (int k = 0; k < F.Nfiber; k++) {
 	  int g=A.TF[j][k];
 	  if(g!=-1){
@@ -426,7 +429,7 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
 	  }
 	}
       }
-    }
+    
     
     return;
 }

@@ -37,15 +37,10 @@ int main (int argc, char ** argv) {
     //for tabulation of results
     int total_used_SS = 0;
     int total_used_SF = 0;   
-    int ELG_obs=0;
-    std::vector <int> LRG_obs(2,0);
-    int QSOt_obs=0;
-    std::vector <int> QSOLya_obs(5,0);    
-
-    // F.readInputFile(argv[1]);
+    //accumulate tiles actually used
+    std::vector <int> tiles_really_used;
     
     F.parseCommandLine(argc, argv);
-    // printFile(argv[1]);
 
     // Read input files for standards, skys and targets.
     // Try to read SS and SF before targets to avoid wasting time if these
@@ -87,14 +82,23 @@ int main (int argc, char ** argv) {
     assign_priority_class(M);
     std::vector <int> total_used_by_class(M.priority_list.size(), 0);
     std::vector <int> count_class(M.priority_list.size(), 0);
+    int Lya_count=0;
     for (size_t i = 0; i < M.size(); ++i) {
         if (!M[i].SS && !M[i].SF) {
             count_class[M[i].priority_class] += 1;
+	    //keep track of Lya QSOs using their NUMOBS_NEEDED==5
+	    if(M[i].nobs_remain==5){Lya_count +=1;}
         }
     }
+    //numbers needed for results in percentages
+    int ELG_start=count_class[0];
+    int LRG_start=count_class[1];
+    int QSOt_start=count_class[2]-Lya_count;
+    int Lya_start=Lya_count;
     for (size_t i = 0; i < M.priority_list.size(); ++i) {
         printf("  class  %lu  number  %d\n", i, count_class[i]);
     }
+    printf("   Lya QSO number %d\n",Lya_count);
     print_time(time, "# ...priority list took :");
     init_time_at(time, "# Start positioners", t);
 
@@ -163,14 +167,21 @@ int main (int argc, char ** argv) {
     int inv_count = 0;
     for (int j = F.epoch_list[epoch]; j < F.Nplate; ++j) {
         bool not_done = true;
+	int last_in_list=F.Nplate;
+	if(epoch<F.num_epoch-1){last_in_list=F.epoch_list[epoch+1]-1;}
         for (int k = 0; k < F.Nfiber && not_done; ++k) {
+
             if (A.TF[j][k] != -1) {
                 // suborder[jused] is jused-th used plate
                 A.suborder.push_back(j);
                 not_done = false;
                 // inv_order[j] is -1 unless used
                 A.inv_order[j] = inv_count;
-                inv_count++;	
+                inv_count++;
+		if(j<last_in_list){
+		  tiles_really_used.push_back(j);
+		}
+
             }
         }
     }
@@ -234,25 +245,25 @@ int main (int argc, char ** argv) {
 	    }
 	}
     }
-
-
-	
-    
-   
-    
+  
     init_time_at(time, "# count SS and SF ", t);
     printf(" Totals SS   %4d    SF   %4d", total_used_SS, total_used_SF);
     for (size_t pr = 0; pr < M.priority_list.size(); ++pr) {
         printf(" class %2lu   %5d \n", pr, total_used_by_class[pr]);
     }
-
-    
+    std::cout<<std::flush;
     printf("\n done with epoch %d\n",epoch);
-    }//end of epoch loop
+    int ELG_obs=0;
+    std::vector <int> LRG_obs(2,0);
+    int QSOt_obs=0;
+    std::vector <int> QSOLya_obs(5,0);    
+    int lastj=F.Nplate;
+    if(epoch!=F.num_epoch-1){
+      lastj=F.epoch_list[epoch+1]-1;
+    }
 
-
-    for (int j = 0; j < F.Nplate; ++j) {
-    
+    for (int jp = 0; jp < tiles_really_used.size(); ++jp) {
+        int j=tiles_really_used[jp];   
         for (int k = 0; k < F.Nfiber; ++k) {
             int g = A.TF[j][k];
             if (g != -1) {
@@ -273,12 +284,27 @@ int main (int argc, char ** argv) {
 	    }
 	}
     }
-    
-    printf("**ELGs  %d   \n",ELG_obs);
-    printf("**LRGs  (1)  %d    (2)   %d \n",LRG_obs[0],LRG_obs[1]/2);
-    printf("**QSO-t %d   \n",QSOt_obs);
-    printf("**QSO-Lya  (1)  %d  (2)  %d  (3) %d  (4)  %d  (5)  %d\n",QSOLya_obs[0],QSOLya_obs[1]/2,QSOLya_obs[2]/3,QSOLya_obs[3]/4,QSOLya_obs[4]/5);	    
+
+    double ELGpct=float(ELG_obs)/ELG_start;
+    double LRG1pct=float(LRG_obs[0])/LRG_start;
+    double LRG2pct=float(LRG_obs[1])/LRG_start/2;
+    double QSOtpct=float(QSOt_obs)/QSOt_start;
+ 
+    std::vector <double> Lya(5,0);
+    for(int i=0;i<5;i++){
+
+      Lya[i]=float(QSOLya_obs[i])/(i+1)/Lya_start;
+    }
+	  
+    printf("XX ELGs  %6.3f   \n",ELGpct);
+    printf("XX LRGs  (1)  %6.3f    (2)   %6.3f \n",LRG1pct,LRG2pct);
+    printf("XX QSO-t %6.3f   \n",QSOtpct);
+    printf("XX QSO-Lya  (1)  %6.3f  (2)  %6.3f  (3) %6.3f  (4)  %6.3f  (5)  %6.3f\n",Lya[0],Lya[1],Lya[2],Lya[3],Lya[4]);
+    printf("QSOt  %d   \n",QSOt_obs);
+  
    
+    }//end of epoch loop
+
 
     init_time_at(time, "# print fits files ", t);
     /*
