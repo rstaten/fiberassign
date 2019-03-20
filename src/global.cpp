@@ -60,9 +60,11 @@ void collect_galaxies_for_all (const MTL & M,
 		// rnc 2/19/19
                 // Check that the target corresponds to the right program
 		// skip because obsconditions not in files
-                //if (M[g].obsconditions & p.obsconditions) {
-                O.push_back(op);
-		    //}	
+                //if (M[g].obsconditions & p.obsconditions) 
+		//3/18/19 need to guarantee that only elgs in gray
+		if((p.obsconditions!=2)||(M[g].t_priority<3001)){
+		   O.push_back(op);
+		    }	
             }
             // Build 2D KD tree of those galaxies
             KDtree <struct onplate> kdT(O, 2);
@@ -146,7 +148,8 @@ void collect_available_tilefibers (MTL & M, const Plates & P, const Feat & F) {
     print_time(t, "# ... took :");
     int count_outside = 0;
     for (size_t g = 0; g < M.size(); ++g) {
-        if ( ( M[g].av_tfs.size() == 0) && M[g].SF) {
+      //rnc 4/19/19  not SF, not SS
+        if ( ( M[g].av_tfs.size() == 0) && !M[g].SF && !M[g].SS) {
             ++count_outside;
         }
     }
@@ -394,10 +397,7 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
     //we want to keep all the assignments in this epoch
     //update status of targets in this epoch
     //but ignore subsequent epochs
-    //first tile in this epoch is epoch_list[epoch]
-    //last tile is epoch_list[epoch+1]-1
-    //so we might want to make the last element in epoch_list
-    //be the number of elements in the survey list, plus 1  
+
     Time t;
     init_time(t, "#Begin clean_up :");
     int g;
@@ -406,6 +406,8 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
     for (int i=0;i<F.num_epoch;i++){
       printf(" i  %d   epoch end %d \n", i,F.epoch_list[i]);
     }
+    printf("length suborder %d",A.suborder.size());
+    std::cout<<std::flush;
 
 
     if(epoch<F.num_epoch-1){
@@ -418,6 +420,7 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
 	}
       }
     }
+    /*
     int lastone=F.Nplate;
     if(epoch<F.num_epoch-1){lastone=F.epoch_list[epoch+1]-1;}
       for(int j =F.epoch_list[epoch]; j<lastone; j++){
@@ -426,9 +429,12 @@ void clean_up(MTL & M, Plates & P, const FP & pp, const Feat & F, Assignment & A
 	  if(g!=-1){
 	    if((M[g].t_priority==3400)&&(M[g].nobs_remain>0)){
 	      M[g].t_priority=3500;}
+	    if((M[g].t_priority==3200)&&(M[g].nobs_remain>0)){
+	      M[g].t_priority==3300;}
+		
 	  }
 	}
-      }
+	}*/
     
     
     return;
@@ -442,11 +448,11 @@ void simple_assign (MTL & M, Plates & P, const FP & pp, const Feat & F,
     int countme = 0;
     int jstart=F.epoch_list[epoch];
     printf(" epoch %d  jstart  %d\n",epoch,jstart);
+    std::cout<<std::flush;
     for (int j = jstart; j < F.Nplate; j++) {
         std::vector <std::pair <double, int> > pairs;
         for (int k = 0; k < F.Nfiber; k++) {
             List av_gals = P[j].av_gals[k];
-
             double Max_fiber_priority = 0.;
             // loop over the potential list to find pbest and subpbest
             // and then combine them to give the fiber_weight

@@ -39,6 +39,10 @@ int main (int argc, char ** argv) {
     int total_used_SF = 0;   
     //accumulate tiles actually used
     std::vector <int> tiles_really_used;
+
+    //for tex 
+    FILE * ftex;
+    ftex=fopen("fortex.tex","w");
     
     F.parseCommandLine(argc, argv);
 
@@ -83,25 +87,32 @@ int main (int argc, char ** argv) {
     std::vector <int> total_used_by_class(M.priority_list.size(), 0);
     std::vector <int> count_class(M.priority_list.size(), 0);
     int Lya_count=0;
+    int LRG2_count=0;
     for (size_t i = 0; i < M.size(); ++i) {
         if (!M[i].SS && !M[i].SF) {
             count_class[M[i].priority_class] += 1;
-	    //keep track of Lya QSOs using their NUMOBS_NEEDED==5
-	    if(M[i].nobs_remain==5){Lya_count +=1;}
+	    //keep track of Lya QSOs using their NUMOBS_NEEDED>3
+	    if(M[i].nobs_remain>3){Lya_count +=1;}
+	    //keep track of LRG2 using their NUMOBS_NEEDED==2
+	    if(M[i].nobs_remain==2){LRG2_count +=1;}
         }
     }
     //numbers needed for results in percentages
     int ELG_start=count_class[0];
-    int LRG_start=count_class[1];
+    int LRG1_start=count_class[1]-LRG2_count;
     int QSOt_start=count_class[2]-Lya_count;
     int Lya_start=Lya_count;
+    int LRG2_start=LRG2_count;
+
+
     for (size_t i = 0; i < M.priority_list.size(); ++i) {
         printf("  class  %lu  number  %d\n", i, count_class[i]);
     }
     printf("   Lya QSO number %d\n",Lya_count);
+    printf("   LRG2  number %d \n",LRG2_count);
     print_time(time, "# ...priority list took :");
     init_time_at(time, "# Start positioners", t);
-
+    std::cout<<std::flush;    
     // fiber positioners
     F.Npetal = 10;  // spectrometers run 0 to 9 unless pacman
     FP pp = read_fiber_positions(F);
@@ -116,7 +127,7 @@ int main (int argc, char ** argv) {
     // fibers per petal = 500
     F.Nfbp = F.Nfiber / F.Npetal;
     print_time(time, "# ..posiioners  took :");
-   
+    std::cout<<std::flush;   
     init_time_at(time, "# Start plates", t);
 
     // P is original list of plates
@@ -149,7 +160,15 @@ int main (int argc, char ** argv) {
     // For each galaxy, computes available tilefibers  G[i].av_tfs =
     // [(j1,k1),(j2,k2),..]
     collect_available_tilefibers(M, P, F);
-
+    //set up results 
+    printf(" epochs %d \n",F.num_epoch);
+    std::cout<<std::flush;
+    double QSOt_list[F.num_epoch];
+    double LRG1_list[F.num_epoch];
+    double ELG_list[F.num_epoch];
+    double LRG2_list[2][F.num_epoch];
+    double Lya_list[5][F.num_epoch];
+ 
     //// Assignment |||||||||||||||||||||||||||||||||||||||||||||||||||
     printf(" Nplate %d  Ngal %d   Nfiber %d \n", F.Nplate, F.Ngal, F.Nfiber);
     Assignment A(M, F);
@@ -254,16 +273,18 @@ int main (int argc, char ** argv) {
     std::cout<<std::flush;
     printf("\n done with epoch %d\n",epoch);
     int ELG_obs=0;
-    std::vector <int> LRG_obs(2,0);
+    int LRG1_obs=0;
+    std::vector <int> LRG2_obs(2,0);
     int QSOt_obs=0;
     std::vector <int> QSOLya_obs(5,0);    
     int lastj=F.Nplate;
     if(epoch!=F.num_epoch-1){
       lastj=F.epoch_list[epoch+1]-1;
     }
-
+    printf("** tiles really used %d",tiles_really_used.size());
     for (int jp = 0; jp < tiles_really_used.size(); ++jp) {
-        int j=tiles_really_used[jp];   
+        int j=tiles_really_used[jp];  
+
         for (int k = 0; k < F.Nfiber; ++k) {
             int g = A.TF[j][k];
             if (g != -1) {
@@ -271,9 +292,11 @@ int main (int argc, char ** argv) {
 		      ELG_obs++;
 		    }
 		    else if(M[g].t_priority==3200){
-			LRG_obs[M[g].nobs_done-1]++;
+			LRG1_obs++;
 		    }
-		   		    
+		    else if(M[g].t_priority==3300){
+		      LRG2_obs[M[g].nobs_done-1]++;
+		    }   
 		    else if(M[g].t_priority==3400){
 			QSOt_obs++;
 		    }
@@ -286,25 +309,105 @@ int main (int argc, char ** argv) {
     }
 
     double ELGpct=float(ELG_obs)/ELG_start;
-    double LRG1pct=float(LRG_obs[0])/LRG_start;
-    double LRG2pct=float(LRG_obs[1])/LRG_start/2;
+    double LRG1pct=float(LRG1_obs)/LRG1_start;
     double QSOtpct=float(QSOt_obs)/QSOt_start;
  
     std::vector <double> Lya(5,0);
+    std::vector <double> LRG2(2,0);
     for(int i=0;i<5;i++){
-
       Lya[i]=float(QSOLya_obs[i])/(i+1)/Lya_start;
+    }
+    for(int i=0;i<2;i++){
+      LRG2[i]=float(LRG2_obs[i])/(i+1)/LRG2_start;
     }
 	  
     printf("XX ELGs  %6.3f   \n",ELGpct);
-    printf("XX LRGs  (1)  %6.3f    (2)   %6.3f \n",LRG1pct,LRG2pct);
+    printf("XX LRG1s %6.3f   \n",LRG1pct);
+    printf("XX LRG2s  (1)  %6.3f    (2)   %6.3f \n",LRG2[0],LRG2[1]);
     printf("XX QSO-t %6.3f   \n",QSOtpct);
     printf("XX QSO-Lya  (1)  %6.3f  (2)  %6.3f  (3) %6.3f  (4)  %6.3f  (5)  %6.3f\n",Lya[0],Lya[1],Lya[2],Lya[3],Lya[4]);
     printf("QSOt  %d   \n",QSOt_obs);
-  
+    
+    ELG_list[epoch]=ELGpct;
+    LRG1_list[epoch]=LRG1pct;
+    QSOt_list[epoch]=QSOtpct;
+    for (int i=0;i<2;i++){LRG2_list[i][epoch]=LRG2[i];}
+    for (int i=0;i<5;i++){Lya_list[i][epoch]=Lya[i];}   
    
     }//end of epoch loop
 
+    //print summary table
+    printf(" type    epochs\n");
+
+    
+    fprintf(ftex,"\\begin{tabular}{l rrrrr}\\\\ \n \\hline\n");
+    fprintf(ftex,"Type  ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex,"& epoch  %d ",ep);
+    }
+    
+    fprintf(ftex,"\\\\ \n"); 
+    fprintf(ftex,"  \\hline \n");
+    fprintf(ftex," ELG  ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+         fprintf(ftex,"& %6.3f  ",ELG_list[ep]);
+    }  
+    fprintf(ftex,"\\\\ \n"); 
+    fprintf(ftex," LRG1  ");
+
+    for (int ep=0;ep<F.num_epoch;ep++){
+         fprintf(ftex,"& %6.3f  ",LRG1_list[ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+    fprintf(ftex,"LRG2 1  ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex," & %6.3f  ",LRG2_list[0][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+  
+    fprintf(ftex,"LRG2 2 ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex,"&  %6.3f ",LRG2_list[1][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+
+    fprintf(ftex," QSO-t  ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+         fprintf(ftex,"& %6.3f  ",QSOt_list[ep]);
+    }  
+    fprintf(ftex,"\\\\ \n"); 
+
+
+    fprintf(ftex,"Lya 1 ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex,"& %6.3f   ",Lya_list[0][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+
+    fprintf(ftex,"Lya 2 ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex,"& %6.3f  ",Lya_list[1][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+
+    fprintf(ftex,"Lya  3");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex,"& %6.3f  ",Lya_list[2][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+
+    fprintf(ftex,"Lya 4  ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex," & %6.3f  ",Lya_list[3][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+
+    fprintf(ftex,"Lya 5 ");
+    for (int ep=0;ep<F.num_epoch;ep++){
+      fprintf(ftex," & %6.3f  ",Lya_list[4][ep]);
+    }  
+    fprintf(ftex,"\\\\ \n");
+    fprintf(ftex,"\\hline\n \\end{tabular}\n");
 
     init_time_at(time, "# print fits files ", t);
     /*

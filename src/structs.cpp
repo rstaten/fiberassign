@@ -985,6 +985,9 @@ void Assignment::assign (int j, int k, int g, MTL & M, Plates & P,
     if((M[g].t_priority==3400)&&(M[g].nobs_remain>0)){
       M[g].t_priority=3500;
     }
+    if((M[g].t_priority==3200)&&(M[g].nobs_remain>0)){
+      M[g].t_priority=3300;
+    }
     //hack for efficiency study rnc 3/1/19
     if (M[g].SF) {
         int q = pp[k].spectrom;
