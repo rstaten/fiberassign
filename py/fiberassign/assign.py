@@ -856,9 +856,6 @@ merged_skymon_columns = OrderedDict([
     ("FIBERFLUX_G", "f4"),
     ("FIBERFLUX_R", "f4"),
     ("FIBERFLUX_Z", "f4"),
-    ("FIBERFLUX_IVAR_G", "f4"),
-    ("FIBERFLUX_IVAR_R", "f4"),
-    ("FIBERFLUX_IVAR_Z", "f4"),
 ])
 
 merged_potential_columns = OrderedDict([

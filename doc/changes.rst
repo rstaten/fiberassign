@@ -10,6 +10,7 @@ fiberassign change log
 * Added cmx_science bits for first light targets (PR `#225`_).
 * Use per-tile field rotations from desimodel.focalplane.fieldrot (PR `#226`_).
 * Format updates to match ICS and some cleanup.
+* Don't require FIBERFLUX_IVAR_G/R/Z for SKY_MONITOR HDU.
 
 .. _`#224`: https://github.com/desihub/fiberassign/pull/224
 .. _`#225`: https://github.com/desihub/fiberassign/pull/225
