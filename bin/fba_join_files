@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+"""
+Join all fiberassign results into a single file
+"""
+
+from fiberassign.scripts.join import parse_join, run_join
+
+
+def main():
+    args = parse_join()
+    run_join(args)
+    return
+
+
+if __name__ == "__main__":
+    main()
