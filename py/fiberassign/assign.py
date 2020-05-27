@@ -1377,3 +1377,27 @@ def merge_results(targetfiles, skyfiles, tiles, result_dir=".",
         results = pool.map(merge_tile, tile_map_list)
 
     return
+
+def join_results(targetfiles, result_dir=".",
+                  result_prefix="fba-", 
+                  out_dir=None, out_prefix="fiberassign-", out_split_dir=False,
+                  columns=None, copy_fba=True):
+    """Join all fiber assignment output files.
+
+    Full target data is stored in shared memory and all the per-tile files are
+    joined to count how many times a target was observed and how many times it 
+    was available to a tile and to a fiber.
+
+    Args:
+        targetfiles (list):  List of pathnames containing the original input
+            target files.  
+        result_dir (str):  Top-level directory of fiberassign results.
+        result_prefix (str):  Prefix of each per-tile file name.
+        result_split_dir (bool):  Results are in split tile directories.
+        out_dir (str):  Top-level directory for merged outputs.
+        out_prefix (str):  Prefix of each per-tile output file name.
+
+    Returns:
+        None.
+
+    """

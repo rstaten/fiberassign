@@ -41,13 +41,6 @@ def parse_join(optlist=None):
                         "example if standards / skies / science targets are "
                         "in different files).")
 
-    parser.add_argument("--sky", type=str, required=False, nargs="+",
-                        help="Input file with sky or 'bad sky' targets.  "
-                        "This option exists in order to treat main-survey"
-                        " sky target files as valid for other survey types."
-                        "  If you are running a main survey assignment, you"
-                        " can just pass the sky file to the --targets list.")
-
     parser.add_argument("--dir", type=str, required=True, default=None,
                         help="Directory containing fiberassign results.")
 
@@ -62,9 +55,6 @@ def parse_join(optlist=None):
     parser.add_argument("--out_prefix", type=str, required=False,
                         default="summary_fba_",
                         help="Prefix of the joined file.")
-
-
-
 
     args = None
     if optlist is None:
@@ -112,7 +102,7 @@ def run_join(args):
 
     """
     tiles, columns = run_merge_init(args)
-    join_results(args.targets, args.sky, result_dir=args.dir,
+    join_results(args.targets, result_dir=args.dir,
                   result_prefix=args.prefix, 
                   out_dir=args.out, out_prefix=args.out_prefix
     return
