@@ -104,5 +104,5 @@ def run_join(args):
     tiles, columns = run_merge_init(args)
     join_results(args.targets, result_dir=args.dir,
                   result_prefix=args.prefix, 
-                  out_dir=args.out, out_prefix=args.out_prefix
+                  out_dir=args.out, out_prefix=args.out_prefix)
     return

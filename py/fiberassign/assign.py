@@ -1401,3 +1401,62 @@ def join_results(targetfiles, result_dir=".",
         None.
 
     """
+    # Load the full set of target files into memory.  Also build a mapping of
+    # target ID to row index.  We assume that the result columns have the same
+    # dtype in any of the target files.  We take the first target file and
+    # construct the output recarray dtype from the columns in that file.
+    out_dtype = None
+    dcols = [(x, y) for x, y in merged_fiberassign_req_columns.items()]
+    dcolnames = [x for x in merged_fiberassign_req_columns.keys()]
+
+    tgdata = dict()
+    tgdtype = dict()
+    tgshape = dict()
+    tghead = dict()
+
+    survey = None
+    for tf in targetfiles:
+        tm = Timer()
+        tm.start()
+        fd = fitsio.FITS(tf)
+        tghead[tf] = fd[1].read_header()
+        # Allocate a shared memory buffer for the target data
+        tglen = fd[1].get_nrows()
+        tgshape[tf] = (tglen,)
+        tgdtype[tf], tempoff, tempisvararray = fd[1].get_rec_dtype()
+        tgbytes = tglen * tgdtype[tf].itemsize
+        tgdata[tf] = RawArray("B", tgbytes)
+        tgview = np.frombuffer(tgdata[tf],
+                               dtype=tgdtype[tf]).reshape(tgshape[tf])
+        # Read data directly into shared buffer
+        tgview[:] = fd[1].read()
+        if survey is None:
+            (survey, col, sciencemask, stdmask, skymask, suppskymask,
+             safemask, excludemask) = default_target_masks(tgview)
+
+        # Sort rows by TARGETID if not already done
+        tgviewids = tgview["TARGETID"]
+        if not np.all(tgviewids[:-1] <= tgviewids[1:]):
+            tgview.sort(order="TARGETID", kind="heapsort")
+
+        tm.stop()
+        tm.report("Read {} into shared memory".format(tf))
+
+        # Add any missing columns to our output dtype record format.
+        tfcols = list(tgview.dtype.names)
+        if columns is not None:
+            tfcols = [x for x in tfcols if x in columns]
+        for col in tfcols:
+            subd = tgview.dtype[col].subdtype
+            colname = col
+            if col in merged_fiberassign_swap:
+                colname = merged_fiberassign_swap[col]
+            if colname not in dcolnames:
+                if subd is None:
+                    dcols.extend([(colname, tgview.dtype[col].str)])
+                else:
+                    dcols.extend([(colname, subd[0], subd[1])])
+                dcolnames.append(colname)
+
+    
+    
