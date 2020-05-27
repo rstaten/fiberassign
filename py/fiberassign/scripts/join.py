@@ -62,9 +62,6 @@ def parse_join(optlist=None):
     else:
         args = parser.parse_args(optlist)
 
-    if args.sky is None:
-        args.sky = list()
-
     return args
 
 def run_join_init(args, comm=None):
@@ -101,7 +98,6 @@ def run_join(args):
         None
 
     """
-    tiles, columns = run_merge_init(args)
     join_results(args.targets, result_dir=args.dir,
                   result_prefix=args.prefix, 
                   out_dir=args.out, out_prefix=args.out_prefix)
