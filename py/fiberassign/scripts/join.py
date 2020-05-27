@@ -83,7 +83,17 @@ def run_join_init(args, comm=None):
             log.error("Results directory {} does not exist".format(args.dir))
             if comm is not None:
                 comm.Abort()
-    return 
+
+    tiles = None
+    if (comm is None) or (comm.rank == 0):
+        tiles = result_tiles(dir=args.dir, prefix=args.prefix)
+
+    if comm is not None:
+        tiles = comm.bcast(tiles, root=0)
+
+    return tiles
+
+
 
 def run_join(args):
     """Run output joining.
@@ -98,7 +108,10 @@ def run_join(args):
         None
 
     """
-    join_results(args.targets, result_dir=args.dir,
+    
+    tiles = run_join_init(args)
+    print("tiles", tiles)
+    join_results(args.targets, tiles, result_dir=args.dir,
                   result_prefix=args.prefix, 
                   out_dir=args.out, out_prefix=args.out_prefix)
     return

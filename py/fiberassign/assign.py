@@ -22,6 +22,8 @@ from functools import partial
 
 from collections import OrderedDict
 
+from collections import Counter
+
 import fitsio
 
 from desiutil.depend import add_dependencies
@@ -1378,10 +1380,9 @@ def merge_results(targetfiles, skyfiles, tiles, result_dir=".",
 
     return
 
-def join_results(targetfiles, result_dir=".",
+def join_results(targetfiles, tiles, result_dir=".",
                   result_prefix="fba-", 
-                  out_dir=None, out_prefix="fiberassign-", out_split_dir=False,
-                  columns=None, copy_fba=True):
+                  out_dir=None, out_prefix="summary_fba_"):
     """Join all fiber assignment output files.
 
     Full target data is stored in shared memory and all the per-tile files are
@@ -1391,16 +1392,80 @@ def join_results(targetfiles, result_dir=".",
     Args:
         targetfiles (list):  List of pathnames containing the original input
             target files.  
+        tiles (list):  List of tile IDs to process.
         result_dir (str):  Top-level directory of fiberassign results.
         result_prefix (str):  Prefix of each per-tile file name.
         result_split_dir (bool):  Results are in split tile directories.
         out_dir (str):  Top-level directory for merged outputs.
         out_prefix (str):  Prefix of each per-tile output file name.
 
+
     Returns:
         None.
 
     """
+    
+    # Load the fiberassign outputs into memory
+    t_assigned = list() # TARGETIDs that were assigned to a fiber
+    t_avail_fiber = list() # TARGETIDs available to all fibers ina tile (includes repetitions)
+    t_avail_tile = list() # TARGETID available in a tile (excludes repetirions)
+    for tile_id in tiles:
+        infile = result_path(tile_id, dir=result_dir, prefix=result_prefix)
+        print(tile_id, infile)
+            # read fba files and list assigned and available targets
+        inhead, fiber_data, targets_data, avail_data, gfa_targets = \
+            read_assignment_fits_tile((tile_id, infile))
+        t_assigned.append(fiber_data['TARGETID'])
+        t_avail_fiber.append(avail_data['TARGETID'])
+        t_avail_tile.append(list(set(avail_data['TARGETID'])))
+    targetid_assigned = np.concatenate(t_assigned)
+    targetid_avail_fiber = np.concatenate(t_avail_fiber)
+    targetid_avail_tile = np.concatenate(t_avail_tile)
+    del t_assigned, t_avail_fiber, t_avail_tile
+    print(len(targetid_assigned), len(targetid_avail_fiber), len(targetid_avail_tile))
+    
+    
+    # count the assigned targets
+    counter_assigned = Counter(targetid_assigned)    
+    print('finished counting targets')
+    
+    # count the available targets per fiber
+    counter_available_fiber = Counter(targetid_avail_fiber)
+    print('finished counting available per fiber')
+    
+    # count the available targets per fiber
+    counter_available_tile = Counter(targetid_avail_tile)
+    print('finished counting available per tile')
+    
+    # find the ids and counts of the assigned targets
+    id_assigned = np.array(list(counter_assigned.keys()))
+    count_assigned = np.array(list(counter_assigned.values()))
+
+    # find the ids and counts of the available targets per fiber
+    id_available_fiber = np.array(list(counter_available_fiber.keys()))
+    count_available_fiber = np.array(list(counter_available_fiber.values()))
+    
+    # find the ids and counts of the available targets per tile
+    id_available_tile = np.array(list(counter_available_tile.keys()))
+    count_available_tile = np.array(list(counter_available_tile.values()))
+    
+    # sort the previous three lists by the target id
+    ii = np.argsort(id_assigned)
+    id_assigned = id_assigned[ii]
+    count_assigned = count_assigned[ii]
+
+    ii = np.argsort(id_available_fiber)
+    id_available_fiber = id_available_fiber[ii]
+    count_available_fiber = count_available_fiber[ii]
+
+    ii = np.argsort(id_available_tile)
+    id_available_tile = id_available_tile[ii]
+    count_available_tile = count_available_tile[ii]
+
+    
+    
+    
+    return
     # Load the full set of target files into memory.  Also build a mapping of
     # target ID to row index.  We assume that the result columns have the same
     # dtype in any of the target files.  We take the first target file and
@@ -1441,22 +1506,6 @@ def join_results(targetfiles, result_dir=".",
 
         tm.stop()
         tm.report("Read {} into shared memory".format(tf))
-
-        # Add any missing columns to our output dtype record format.
-        tfcols = list(tgview.dtype.names)
-        if columns is not None:
-            tfcols = [x for x in tfcols if x in columns]
-        for col in tfcols:
-            subd = tgview.dtype[col].subdtype
-            colname = col
-            if col in merged_fiberassign_swap:
-                colname = merged_fiberassign_swap[col]
-            if colname not in dcolnames:
-                if subd is None:
-                    dcols.extend([(colname, tgview.dtype[col].str)])
-                else:
-                    dcols.extend([(colname, subd[0], subd[1])])
-                dcolnames.append(colname)
 
     
     
