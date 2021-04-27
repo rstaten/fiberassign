@@ -14,9 +14,10 @@ def stuck_on_sky(hw, tiles):
     from fiberassign.hardware import FIBER_STATE_STUCK
     from fiberassign.utils import Logger
 
+    log = Logger.get()
+
     skybricks_dir = os.environ.get('SKYBRICKS_DIR', None)
     if skybricks_dir is None:
-        log = Logger.get()
         log.warning('Environment variable SKYBRICKS_DIR is not set; not looking up whether '
                     'stuck positioners land on good sky')
         return
@@ -79,8 +80,6 @@ def stuck_on_sky(hw, tiles):
         loc_ra  = np.array([r for r,d in loc_radec])
         loc_dec = np.array([d for r,d in loc_radec])
 
-        print('Tile', tile_ra, tile_dec)
-        
         good_sky = np.zeros(len(loc_ra), bool)
         # Check possibly-overlapping skybricks.
         for i in sky_inds:
@@ -89,15 +88,14 @@ def stuck_on_sky(hw, tiles):
                 (loc_ra  <  skybricks['RA2'][i]) *
                 (loc_dec >= skybricks['DEC1'][i]) *
                 (loc_dec <  skybricks['DEC2'][i]))
-            print(len(loc_in), 'fibers overlap brick', skybricks['BRICKNAME'][i])
+            log.debug('%i fibers overlap sky brick %s' % (len(loc_in), skybricks['BRICKNAME'][i]))
             if len(loc_in) == 0:
                 continue
 
             fn = os.path.join(skybricks_dir,
                               'sky-%s.fits.gz' % skybricks['BRICKNAME'][i])
-            # FIXME -- debugging
             if not os.path.exists(fn):
-                print('Missing:', fn)
+                log.warning('Sky bricks: missing file %s' % fn)
                 continue
 
             skymap,hdr = fitsio.read(fn, header=True)
@@ -122,7 +120,7 @@ def stuck_on_sky(hw, tiles):
             # FIXME -- look at surrounding pixels too??
             good_sky[loc_in] = (skymap[y, x] == 0)
 
-        print(np.sum(good_sky), 'stuck positioners land on good sky')
+        log.debug('%i stuck positioners land on good sky' % (np.sum(good_sky)))
 
         for loc,good in zip(stuck_loc, good_sky):
             stuck_sky[tile_id][loc] = good
