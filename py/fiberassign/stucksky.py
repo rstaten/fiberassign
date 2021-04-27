@@ -11,7 +11,7 @@ def stuck_on_sky(hw, tiles):
     from scipy.spatial import KDTree
     import fitsio
     from astropy.wcs import WCS
-    from fiberassign.hardware import FIBER_STATE_STUCK
+    from fiberassign.hardware import FIBER_STATE_STUCK, FIBER_STATE_BROKEN
     from fiberassign.utils import Logger
 
     log = Logger.get()
@@ -43,6 +43,7 @@ def stuck_on_sky(hw, tiles):
         # Stuck locations and their angles
         stuck_loc = [loc for loc in hw.locations
                      if ((hw.state[loc] & FIBER_STATE_STUCK != 0) and
+                         (hw.state[loc] & FIBER_STATE_BROKEN == 0) and
                          (hw.loc_device_type[loc] == 'POS'))]
         stuck_theta = [hw.loc_theta_pos[x] for x in stuck_loc]
         stuck_phi   = [hw.loc_phi_pos  [x] for x in stuck_loc]
@@ -120,7 +121,7 @@ def stuck_on_sky(hw, tiles):
             # FIXME -- look at surrounding pixels too??
             good_sky[loc_in] = (skymap[y, x] == 0)
 
-        log.debug('%i stuck positioners land on good sky' % (np.sum(good_sky)))
+        log.debug('%i of %i stuck positioners land on good sky' % (np.sum(good_sky), len(good_sky)))
 
         for loc,good in zip(stuck_loc, good_sky):
             stuck_sky[tile_id][loc] = good
