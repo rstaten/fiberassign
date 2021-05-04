@@ -856,6 +856,15 @@ def main():
             time() - start, ",".join(columns), mydirs["targ"]
             )
         )
+
+        names = []
+        for name in names:
+            if 'SV3' in name:
+                name = name.replace('SV3_', '')
+            names.append(name)
+
+        d.dtype.names = names
+
         d = inflate_ledger(
             d, mydirs["targ"], columns=columns, header=False, strictcols=False, quick=True
         )
@@ -2175,5 +2184,5 @@ if __name__ == "__main__":
         os.remove(mytmpouts["log"])
     with stdouterr_redirected(to=mytmpouts["log"]):
         main()
-    # main()
+    main()
 
